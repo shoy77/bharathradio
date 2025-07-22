@@ -1,7 +1,7 @@
 {
   "name": "bharath radio",
   "short_name": "Bharath FM",
-  "start_url": "index.html",
+  "start_url": "./"
   "display": "standalone",
   "background_color": "#8399ab",
   "theme_color": "#317EFB",
