@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bharath Radio</title>
-<link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#317EFB" />
   <link rel="icon" href="icons/icon-192.png">
   <style>
@@ -17,7 +17,6 @@
       height: 100vh;
       margin: 0;
     }
-
     .ipod {
       width: 320px;
       height: 620px;
@@ -30,7 +29,6 @@
       flex-direction: column;
       align-items: center;
     }
-
     .screen {
       background: #000;
       border-radius: 20px;
@@ -41,19 +39,16 @@
       text-align: center;
       margin-bottom: 30px;
     }
-
     .frequency {
       font-size: 32px;
       color: #00aaff;
       font-weight: bold;
     }
-
     .station {
       font-size: 13px;
       color: #aaa;
       margin-top: 5px;
     }
-
     .indicator {
       margin-top: 8px;
       height: 10px;
@@ -62,12 +57,10 @@
       background: gray;
       display: inline-block;
     }
-
     .indicator.on {
       background: limegreen;
       box-shadow: 0 0 10px lime;
     }
-
     #visualizer {
       margin-top: 12px;
       width: 100%;
@@ -75,7 +68,6 @@
       background: #111;
       border-radius: 8px;
     }
-
     .wheel {
       width: 200px;
       height: 200px;
@@ -86,7 +78,6 @@
       box-shadow: inset 0 0 20px #000;
       margin-top: 10px;
     }
-
     .wheel button {
       position: absolute;
       background: none;
@@ -95,12 +86,10 @@
       font-size: 18px;
       cursor: pointer;
     }
-
     .top-btn { top: 10px; left: 50%; transform: translateX(-50%); }
     .bottom-btn { bottom: 10px; left: 50%; transform: translateX(-50%); }
     .left-btn { left: 10px; top: 50%; transform: translateY(-50%); }
     .right-btn { right: 10px; top: 50%; transform: translateY(-50%); }
-
     .center-button {
       position: absolute;
       top: 50%;
@@ -123,7 +112,6 @@
       justify-content: center;
       align-items: center;
     }
-
     .center-button.on {
       color: lime;
       box-shadow:
@@ -132,11 +120,6 @@
         0 0 20px lime;
       text-shadow: 0 0 6px limegreen;
     }
-
-    .center-button:active {
-      transform: translate(-50%, -50%) scale(0.95);
-    }
-
     .center-button svg {
       width: 32px;
       height: 32px;
@@ -147,184 +130,102 @@
   </style>
 </head>
 <body>
-
-<div class="ipod">
-  <div class="screen">
-    <div class="frequency" id="frequency">--.- MHz</div>
-    <div class="station" id="stationName">OFF</div>
-    <div class="indicator" id="indicator"></div>
-    <canvas id="visualizer" width="280" height="250"></canvas>
+  <div class="ipod">
+    <div class="screen">
+      <div class="frequency" id="frequency">--.- MHz</div>
+      <div class="station" id="stationName">OFF</div>
+      <div class="indicator" id="indicator"></div>
+      <canvas id="visualizer" width="280" height="250"></canvas>
+    </div>
+    <div class="wheel">
+      <button class="left-btn" onclick="prevStation()">⏮</button>
+      <button class="right-btn" onclick="nextStation()">⏭</button>
+      <button class="center-button" onclick="togglePower()" id="powerBtn">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2V12" />
+          <path d="M5.5 7A9 9 0 1 0 18.5 7" />
+        </svg>
+      </button>
+    </div>
+    <audio id="player" preload="none" crossorigin="anonymous"></audio>
   </div>
-
-  <div class="wheel">
-    <button class="left-btn" onclick="prevStation()">⏮</button>
-    <button class="right-btn" onclick="nextStation()">⏭</button>
-  
-    <button class="center-button" onclick="togglePower()" id="powerBtn">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 2V12" />
-        <path d="M5.5 7A9 9 0 1 0 18.5 7" />
-      </svg>
-    </button>
-  </div>
-
-  <audio id="player" preload="none" crossorigin="anonymous"></audio>
-</div>
-
-<script>
+  <script>
     const stations = [
-      
-  { name: "Tamil FM Dubai", freq: "89.4", url: "https://centova.aarenworld.com/proxy/894tamilfm/stream" },
-  { name: "Ashraya FM Kottarakara", freq: "90.0", url: "https://fm.ashrayafm90.com/ashrayafm" },
-  { name: "Ahalia FM Palakkad", freq: "90.4", url: "https://cast1.my-control-panel.com/proxy/ahaliafm/stream" },
-  { name: "Radio Lemon Bangalore", freq: "90.5", url: "https://schedule.radiolemonlive.com:7443/listen/radio_lemon_live_bangalore/live" },
-  { name: "91.7 FM Qatar", freq: "91.7", url: "https://playerservices.streamtheworld.com/api/livestream-redirect/SUNO917_SC" },
-  { name: "Radio Mango", freq: "91.9", url: "https://listen.openstream.co/4635/audio" },
-  { name: "Suryan FM", freq: "93.5", url: "https://radios.crabdance.com:8002/2" },
-  { name: "Club FM", freq: "94.3", url: "https://listen.openstream.co/4635/audio" },
-  { name: "Radio Asia", freq: "94.7", url: "https://ice31.securenetsystems.net/RADIOKERAL" },
-  { name: "Red FM Mumbai", freq: "95.0", url: "https://funasia.streamguys1.com/live9" },
-  { name: "Radio Mirchi", freq: "98.3", url: "https://playerservices.streamtheworld.com/api/livestream-redirect/NJS_HIN_ESTAAC.m3u8" },
-  { name: "Radio Malayalam Qatar", freq: "98.6", url: "https://stream.zeno.fm/512rbf1e3qzuv" },
-  { name: "Adithya FM", freq: "99.9", url: "https://stream.zeno.fm/9x1sw687nf9uv" },
-  { name: "Ananthapuri FM",  freq: "101.9", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio229/playlist.m3u8" },
-  { name: "Kochi FM",      freq: "102.3", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio045/playlist.m3u8" },
-  { name: "Akashavani Thiruvanathapuram", freq: "102.9", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio230/playlist.m3u8" },
-  { name: "Rainbow FM", freq: "104.5", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio045/playlist" },
-  { name: "Vividh Bharati", freq: "107.5", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8" },
-  { name: "Kiss FM UK", freq: "107.6", url: "https://edge-bauerall-01-gos2.sharp-stream.com/kissnational.aac" },
-  { name: "Hit Music FM", freq: "107.7", url: "https://playerservices.streamtheworld.com/api/livestream-redirect/KZGFFMAAC.aac" },
-  { name: "Hit FM", freq: "107.8", url: "https://stream.revma.ihrhls.com/zc5299" },
-  { name: "Radio Paradise", freq: "107.9", url: "https://stream.radioparadise.com/mp3-128" },
-    
-  ];
-
-  let current = 0;
-  let isOn = false;
-
-  const player = document.getElementById("player");
-  const freqDisplay = document.getElementById("frequency");
-  const nameDisplay = document.getElementById("stationName");
-  const indicator = document.getElementById("indicator");
-  const powerBtn = document.getElementById("powerBtn");
-
-  function loadStation(index) {
-    const station = stations[index];
-    player.src = station.url;
-    freqDisplay.textContent = `${station.freq} MHz`;
-    nameDisplay.textContent = station.name;
-    player.play().catch(err => console.error("Autoplay error:", err));
-  }
-
-  function nextStation() {
-    if (!isOn) return;
-    current = (current + 1) % stations.length;
-    loadStation(current);
-  }
-
-  function prevStation() {
-    if (!isOn) return;
-    current = (current - 1 + stations.length) % stations.length;
-    loadStation(current);
-  }
-
-  function togglePower() {
-    isOn = !isOn;
-    if (isOn) {
-      indicator.classList.add("on");
-      powerBtn.classList.add("on");
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-      loadStation(current);
-      drawVisualizer();
-    } else {
-      indicator.classList.remove("on");
-      powerBtn.classList.remove("on");
-      player.pause();
-      freqDisplay.textContent = "Bharath Radio";
-      nameDisplay.textContent = "OFF";
+      { name: "Radio Mango", freq: "91.9", url: "https://listen.openstream.co/4635/audio" },
+      { name: "Suryan FM", freq: "93.5", url: "https://radios.crabdance.com:8002/2" },
+      { name: "Radio Mirchi", freq: "98.3", url: "https://playerservices.streamtheworld.com/api/livestream-redirect/NJS_HIN_ESTAAC.m3u8" }
+    ];
+    let current = 0, isOn = false;
+    const player = document.getElementById("player"),
+          freqDisplay = document.getElementById("frequency"),
+          nameDisplay = document.getElementById("stationName"),
+          indicator = document.getElementById("indicator"),
+          powerBtn = document.getElementById("powerBtn");
+    function loadStation(i) {
+      const s = stations[i];
+      player.src = s.url;
+      freqDisplay.textContent = s.freq + " MHz";
+      nameDisplay.textContent = s.name;
+      player.play().catch(err => console.error("Autoplay error:", err));
     }
-  }
-
-
-  // Audio Visualizer
-  const canvas = document.getElementById("visualizer");
-  const ctx = canvas.getContext("2d");
-
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  const analyser = audioContext.createAnalyser();
-  const source = audioContext.createMediaElementSource(player);
-  source.connect(analyser);
-  analyser.connect(audioContext.destination);
-  analyser.fftSize = 64;
-
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Uint8Array(bufferLength);
-
-  function drawVisualizer() {
-  requestAnimationFrame(drawVisualizer);
-  analyser.getByteFrequencyData(dataArray);
-  
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const barWidth = canvas.width / bufferLength;
-  let x = 0;
-  
-  for (let i = 0; i < bufferLength; i++) {
-    const barHeight = dataArray[i];
-    const hue = (i / bufferLength) * 360; // full rainbow
-    ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-    ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-    x += barWidth;
-  }
-}
-
-  let deferredPrompt;
-
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); // Stop automatic prompt
-    deferredPrompt = e;
-
-    // Create Install Button
-    const installBtn = document.createElement('button');
-    installBtn.textContent = 'Install Bharath Radio';
-    installBtn.style = `
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 20px;
-      background-color: #317EFB;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      z-index: 9999;
-    `;
-    document.body.appendChild(installBtn);
-
-    installBtn.addEventListener('click', () => {
-      installBtn.style.display = 'none';
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('User accepted the install prompt');
-        } else {
-          console.log('User dismissed the install prompt');
-        }
-        deferredPrompt = null;
+    function nextStation() { if (!isOn) return; current = (current + 1) % stations.length; loadStation(current); }
+    function prevStation() { if (!isOn) return; current = (current - 1 + stations.length) % stations.length; loadStation(current); }
+    function togglePower() {
+      isOn = !isOn;
+      indicator.classList.toggle("on", isOn);
+      powerBtn.classList.toggle("on", isOn);
+      if (isOn) {
+        if (audioContext.state === 'suspended') audioContext.resume();
+        loadStation(current);
+        drawVisualizer();
+      } else {
+        player.pause();
+        freqDisplay.textContent = "Bharath Radio";
+        nameDisplay.textContent = "OFF";
+      }
+    }
+    const canvas = document.getElementById("visualizer"),
+          ctx = canvas.getContext("2d"),
+          audioContext = new (window.AudioContext || window.webkitAudioContext)(),
+          analyser = audioContext.createAnalyser(),
+          source = audioContext.createMediaElementSource(player);
+    source.connect(analyser); analyser.connect(audioContext.destination); analyser.fftSize = 64;
+    const bufferLength = analyser.frequencyBinCount, dataArray = new Uint8Array(bufferLength);
+    function drawVisualizer() {
+      requestAnimationFrame(drawVisualizer);
+      analyser.getByteFrequencyData(dataArray);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = canvas.width / bufferLength;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = dataArray[i];
+        ctx.fillStyle = `hsl(${(i / bufferLength) * 360}, 100%, 50%)`;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+        x += barWidth;
+      }
+    }
+    // PWA install button
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.createElement('button');
+      btn.textContent = 'Install Bharath Radio';
+      btn.style = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:12px 24px;background:#317EFB;color:white;border:none;border-radius:5px;z-index:1000;';
+      document.body.appendChild(btn);
+      btn.addEventListener('click', () => {
+        btn.style.display = 'none';
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(choice => {
+          deferredPrompt = null;
+        });
       });
     });
-  });
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js')
-      .then(reg => console.log('Service Worker registered:', reg))
-      .catch(err => console.error('Service Worker error:', err));
-  }
-</script>
-</script>
-
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => console.log('✅ Service Worker registered:', reg))
+        .catch(err => console.error('❌ Service Worker error:', err));
+    }
+  </script>
 </body>
 </html>
