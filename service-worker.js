@@ -1,20 +1,15 @@
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open('bharath-radio-cache').then(cache => {
-      return cache.addAll([
-        '/',
-        '/index.html',
-        '/manifest.json',
-        '/icons/icon-192.png'
-      ]);
-    })
-  );
-});
-
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
-  );
-});
+{
+  "name": "Bharath Radio",
+  "short_name": "BharathFM",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#8399ab",
+  "theme_color": "#317EFB",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
