@@ -3,38 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PWA Test Page</title>
+  <title>Bharath Radio</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#317EFB" />
   <link rel="icon" href="icons/icon-192.png">
   <style>
     body {
+      font-family: Arial, sans-serif;
+      background: #8399ab;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      font-family: Arial, sans-serif;
       height: 100vh;
       margin: 0;
-      background: #eef2f7;
       text-align: center;
     }
-    button {
+    h1 {
+      font-size: 2em;
+      color: #fff;
+    }
+    p {
+      color: #eee;
+      font-size: 1rem;
+    }
+    #installBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       padding: 12px 24px;
-      background: #317EFB;
+      background-color: #317EFB;
       color: white;
       border: none;
       border-radius: 5px;
       font-size: 16px;
       cursor: pointer;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
   </style>
 </head>
 <body>
-  <h1>🎉 Bharath PWA Test</h1>
-  <p>If you're seeing this page and the install prompt works, your PWA is functional.</p>
-  
-  <button id="installBtn" style="display: none;">Install App</button>
+  <h1>🎧 Bharath Radio</h1>
+  <p>This is a test version of your PWA. You should see an install button below if your browser supports it.</p>
+
+  <button id="installBtn">Install Bharath Radio</button>
 
   <script>
     let deferredPrompt;
@@ -49,15 +64,20 @@
     installBtn.addEventListener('click', () => {
       installBtn.style.display = 'none';
       deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
+      deferredPrompt.userChoice.then(choiceResult => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('✅ App installed');
+        } else {
+          console.log('❌ User dismissed install');
+        }
         deferredPrompt = null;
       });
     });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
-        .then(reg => console.log('✅ Service Worker registered:', reg))
-        .catch(err => console.error('❌ Service Worker error:', err));
+        .then(reg => console.log('✅ Service Worker registered:', reg.scope))
+        .catch(err => console.error('❌ Service Worker failed:', err));
     }
   </script>
 </body>
