@@ -10,6 +10,10 @@
 </head>
 <body>
   <h2>Welcome to My PWA</h2>
-  <script src="app.js"></script>
+  <script src="app.js">
+    if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
 </html>
