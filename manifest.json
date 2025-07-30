@@ -1,6 +1,6 @@
 {
-  "name": "My PWA App",
-  "short_name": "PWA App",
+  "name": "Bharath Radio",
+  "short_name": "Bharath Radio",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
