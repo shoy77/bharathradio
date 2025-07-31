@@ -216,7 +216,9 @@
     window.addEventListener("load", () => {
       setTimeout(() => {
         document.getElementById("splash").style.display = "none";
-        document.getElementById("mainApp").style.display = "flex";
+        const app = document.getElementById("mainApp");
+app.style.display = "flex";
+setTimeout(() => app.classList.add("visible"), 10); // Fade in
       }, 4000);
     });
 
