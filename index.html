@@ -7,164 +7,118 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icons/icon-192.png" />
   <meta name="theme-color" content="#2196f3" />
-  <style>
-    body {
-  font-family: 'Arial', sans-serif;
-  margin: 0;
-  padding: 0;
-    
+  </head>
+   <body>
+
+  <!-- Header: Station Info & Visualizer -->
+  <header>
+    <div class="station-name" id="stationName">Bharath FM — OFF</div>
+    <div class="frequency" id="frequencyDisplay">--.- MHz</div>
+    <div class="indicator" id="indicator"></div>
+    <canvas id="visualizer"></canvas>
+  </header>
+
+  <!-- Main Content -->
+  <div class="ipod">
+    <audio id="player" preload="auto" crossorigin="anonymous"></audio>
+    <div>🎵 Radio Playing...</div>
+  </div>
+
+  <!-- Footer: Wheel & Buttons -->
+  <footer>
+    <div class="wheel">
+      <button class="left-btn" onclick="prevStation()">⏮</button>
+      <button class="right-btn" onclick="nextStation()">⏭</button>
+      <button class="center-button" onclick="togglePower()" id="powerBtn">⏻</button>
+    </div>
+  </footer>
+
+  <script>
+    const stations = [
+      { name: "Tamil FM Dubai", freq: "89.4", url: "https://centova.aarenworld.com/proxy/894tamilfm/stream" },
+      { name: "Radio Macfast", freq: "90.42", url: "https://icecast.octosignals.com/radiomacfast" },
+      { name: "Radio Mango", freq: "91.9", url: "https://listen.openstream.co/4635/audio" },
+      { name: "Radio Paradise", freq: "107.9", url: "https://stream.radioparadise.com/mp3-128" }
+    ];
+
+    let current = 0;
+    let isOn = false;
+
+    const player = document.getElementById("player");
+    const stationName = document.getElementById("stationName");
+    const freqDisplay = document.getElementById("frequencyDisplay");
+    const powerBtn = document.getElementById("powerBtn");
+    const indicator = document.getElementById("indicator");
+
+    function loadStation(index) {
+      const station = stations[index];
+      player.src = station.url;
+      freqDisplay.textContent = `${station.freq} MHz`;
+      stationName.textContent = station.name;
+      player.play().catch(err => console.warn("Autoplay issue:", err));
     }
 
-    /* Splash screen styles */
-    #splash {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 9999;
-      background: #000;
+    function togglePower() {
+      isOn = !isOn;
+      if (isOn) {
+        indicator.classList.add("on");
+        powerBtn.classList.add("on");
+        if (audioContext.state === "suspended") {
+          audioContext.resume();
+        }
+        loadStation(current);
+        drawVisualizer();
+      } else {
+        indicator.classList.remove("on");
+        powerBtn.classList.remove("on");
+        player.pause();
+        freqDisplay.textContent = "--.- MHz";
+        stationName.textContent = "Bharath FM — OFF";
+      }
     }
 
-    #splash img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
+    function nextStation() {
+      if (!isOn) return;
+      current = (current + 1) % stations.length;
+      loadStation(current);
     }
 
-    /* App content */
-    #mainApp.visible {
-  opacity: 1;
-  transition: opacity 1.5s ease;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-image: url("icons/splash-720x1280.png"); /* ✅ your image */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-      
+    function prevStation() {
+      if (!isOn) return;
+      current = (current - 1 + stations.length) % stations.length;
+      loadStation(current);
     }
 
-    
+    // 🎛 Visualizer Setup
+    const canvas = document.getElementById("visualizer");
+    const ctx = canvas.getContext("2d");
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaElementSource(player);
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+    analyser.fftSize = 64;
 
-    .screen {
-      background: #000;
-      border-radius: 20px;
-      width: 100%;
-      height: 180px;
-      padding: 15px;
-      box-shadow: inset 0 0 10px #000;
-      text-align: center;
-      margin-bottom: 30px;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function drawVisualizer() {
+      requestAnimationFrame(drawVisualizer);
+      analyser.getByteFrequencyData(dataArray);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = canvas.width / bufferLength;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = dataArray[i];
+        const hue = (i / bufferLength) * 360;
+        ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+        x += barWidth;
+      }
     }
-
-    .frequency {
-      font-size: 32px;
-      color: #00aaff;
-      font-weight: bold;
-    }
-
-    .station {
-      font-size: 13px;
-      color: #aaa;
-      margin-top: 5px;
-    }
-
-    .indicator {
-      margin-top: 8px;
-      height: 10px;
-      width: 10px;
-      border-radius: 50%;
-      background: gray;
-      display: inline-block;
-    }
-
-    .indicator.on {
-      background: limegreen;
-      box-shadow: 0 0 10px lime;
-    }
-
-    #visualizer {
-      margin-top: 12px;
-      width: 100%;
-      height: 70px;
-      background: #111;
-      border-radius: 8px;
-    }
-
-    .wheel {
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      background: #222;
-      border: 4px solid #555;
-      position: relative;
-      box-shadow: inset 0 0 20px #000;
-      margin-top: 225px;
-    }
-
-    .wheel button {
-      position: absolute;
-      background: none;
-      border: none;
-      color: white;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .top-btn { top: 10px; left: 50%; transform: translateX(-50%); }
-    .bottom-btn { bottom: 10px; left: 50%; transform: translateX(-50%); }
-    .left-btn { left: 10px; top: 50%; transform: translateY(-50%); }
-    .right-btn { right: 10px; top: 50%; transform: translateY(-50%); }
-
-    .center-button {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #555, #000);
-      border: none;
-      color: red;
-      box-shadow:
-        inset -3px -3px 6px rgba(255,255,255,0.2),
-        inset 3px 3px 6px rgba(0,0,0,0.6),
-        0 0 15px red;
-      text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .center-button.on {
-      color: lime;
-      box-shadow:
-        inset -3px -3px 6px rgba(255,255,255,0.2),
-        inset 3px 3px 6px rgba(0,0,0,0.6),
-        0 0 20px lime;
-      text-shadow: 0 0 6px limegreen;
-    }
-
-    .center-button:active {
-      transform: translate(-50%, -50%) scale(0.95);
-    }
-
-    .center-button svg {
-      width: 32px;
-      height: 32px;
-      stroke-width: 2;
-      stroke: currentColor;
-      fill: none;
-    }
-  </style>
-</head>
-<body>
+  
   <!-- Splash screen -->
 
 <div id="splash" style="
@@ -201,7 +155,7 @@
     </div>
   </div>
 
-  <script>
+ 
     // Splash transition
     window.addEventListener("load", () => {
       setTimeout(() => {
