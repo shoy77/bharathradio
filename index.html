@@ -300,15 +300,10 @@ setTimeout(() => app.classList.add("visible"), 10); // Fade in
     const canvas = document.getElementById("visualizer");
     const ctx = canvas.getContext("2d");
 
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const analyser = audioContext.createAnalyser();
-    const source = audioContext.createMediaElementSource(player);
-    source.connect(analyser);
-    analyser.connect(audioContext.destination);
-    analyser.fftSize = 64;
 
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+
+    
+    
 
     function drawVisualizer() {
       requestAnimationFrame(drawVisualizer);
