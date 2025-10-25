@@ -178,13 +178,18 @@
 
   <!-- Main App -->
   <div id="mainApp">
-    <div class="ipod">
-      <div class="screen">
-        <div class="frequency" id="frequency">--.- MHz</div>
-        <div class="station" id="stationName">OFF</div>
-        <div class="indicator" id="indicator"></div>
-        <canvas id="visualizer" width="280" height="250"></canvas>
-      </div>
+  <div class="ipod">
+    <div class="screen">
+      <!-- 👇 Add your radio name here -->
+      <div class="appName" id="appName">Bharath Radio</div>
+
+      <div class="frequency" id="frequency">--.- MHz</div>
+      <div class="station" id="stationName">OFF</div>
+      <div class="indicator" id="indicator"></div>
+      <canvas id="visualizer" width="280" height="250"></canvas>
+    </div>
+  </div>
+</div>
       <div class="wheel">
         <button class="left-btn" onclick="prevStation()">⏮</button>
         <button class="right-btn" onclick="nextStation()">⏭</button>
