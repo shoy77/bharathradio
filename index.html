@@ -9,494 +9,235 @@
   <meta name="theme-color" content="#2196f3" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   
- <style>
-        /* --- CSS STYLES --- */
+
+   <style>
         :root {
-            --bg-base: #121212;
-            --card-base: #1e1e1e;
-            --accent-color: #00bcd4;
-            --indicator-green: #28a745; 
-            --indicator-yellow: #ffc107; 
-            --indicator-red: #dc3545;   
-            --text-light: #ffffff;
-            --text-gray: #b0b0b0;
-            --header-height: 70px; 
-            --footer-height: 80px; 
+            --ios-blur: rgba(18, 18, 20, 0.95);
+            --accent: #00d2ff;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            /* LED Colors */
+            --led-blue: #007bff;
+            --led-green: #28a745;
+            --led-yellow: #ffc107;
+            --led-red: #dc3545;
         }
 
         body {
-            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-base);
-            margin: 0; color: var(--text-light);
-            min-height: 100vh; overflow-y: auto; 
+            margin: 0; background-color: #000; color: #fff;
+            font-family: -apple-system, system-ui, sans-serif;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
         }
 
-        /* 1. HEADER */
-        .app-header-container {
-            position: fixed; top: 0; left: 0; right: 0;
-            height: var(--header-height); 
-            background-color: var(--bg-base); 
+        #dynamic-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at 50% 50%, #222 0%, #000 100%);
+            z-index: -1; transition: background 1.2s ease; filter: blur(70px);
+        }
+
+        header { padding: 45px 20px 10px; display: flex; justify-content: space-between; align-items: flex-end; }
+        header h1 { font-size: 1.8rem; margin: 0; font-weight: 800; letter-spacing: -1px; }
+
+        /* --- 3-COLUMN BENTO GRID --- */
+        .scroller {
+            flex: 1; overflow-y: auto; padding: 10px 15px 180px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .station-card {
+            background: var(--card-bg); backdrop-filter: blur(15px);
+            border-radius: 22px; padding: 12px;
+            display: flex; flex-direction: column; align-items: center;
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .station-card:active { transform: scale(0.93); background: rgba(255,255,255,0.08); }
+        .station-card.active { border-color: var(--accent); background: rgba(0, 210, 255, 0.05); }
+
+        .station-card img {
+            width: 100%; aspect-ratio: 1; border-radius: 14px;
+            object-fit: cover; margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .station-card span {
+            font-size: 0.7rem; font-weight: 600; text-align: center;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+        }
+
+        /* --- iOS PLAYER & 4-COLOR LED --- */
+        .ios-player {
+            position: fixed; bottom: 25px; left: 15px; right: 15px;
+            background: var(--ios-blur); backdrop-filter: blur(40px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 32px;
+            padding: 16px 20px; box-shadow: 0 25px 50px rgba(0,0,0,0.7);
             z-index: 1000;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 15px; 
-            border-bottom: 1px solid #333;
-            overflow: hidden; 
         }
 
-        /* Visualizer Canvas */
-        #visualizer {
-            position: absolute;
-            bottom: 0; left: 0;
-            width: 100%; height: 100%; 
-            z-index: 0; 
-            opacity: 0.5; /* Good visibility without blocking text */
-            pointer-events: none; 
+        /* 20-Segment LED Meter */
+        .led-meter {
+            display: flex; gap: 3px; height: 8px; width: 100%;
+            margin-bottom: 15px; justify-content: center;
+            background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px;
         }
+        .led-seg { flex: 1; height: 100%; border-radius: 1.5px; background: #222; transition: 0.08s; }
 
-        /* Header Content */
-        .header-button, .app-header-center {
-            position: relative;
-            z-index: 2; 
-        }
+        .player-main { display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+        .mini-info { display: flex; align-items: center; gap: 12px; flex: 1; overflow: hidden; }
+        .mini-info img { width: 46px; height: 46px; border-radius: 10px; }
+        #st-name { font-weight: 700; font-size: 1rem; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #st-status { font-size: 0.65rem; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
-        .app-header-center {
-            position: absolute; left: 50%; transform: translateX(-50%);
-            display: flex; align-items: center;
-        }
-        .app-header-center h1 {
-            margin: 0; font-size: 1.5em; 
-            color: var(--accent-color); 
-            font-weight: 500;
-            /* Text shadow to make it pop against the bars */
-            text-shadow: 0 2px 5px rgba(0,0,0,0.9); 
-        }
-
-        .header-button {
-            background: none; border: none; color: var(--text-light);
-            font-size: 1.2em; cursor: pointer;
-        }
-
-        /* Status Indicator */
-        #station-indicator {
-            width: 15px; height: 15px; 
-            border-radius: 50%; margin-left: 10px; 
-            background-color: var(--indicator-yellow); 
-            box-shadow: 0 0 8px var(--indicator-yellow); 
-            border: 2px solid var(--card-base); 
-            transition: all 0.3s ease-in-out;
-        }
-        .playing-pulse { animation: pulse-green 1.5s infinite; }
-        @keyframes pulse-green { 
-            0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); } 
-            70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); } 
-            100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); } 
-        }
-
-        /* 2. MAIN LAYOUT */
-        .playback-bar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: var(--footer-height); 
-            background-color: var(--card-base);
-            box-shadow: 0 -5px 10px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            display: flex; align-items: center; justify-content: space-between; 
-            padding: 0 15px; border-top: 1px solid #333;
-        }
-        .now-playing-info { margin-right: 15px; }
-        .now-playing-info span { display: block; font-weight: bold; }
-        .now-playing-info #playback-status { font-size: 0.8em; color: var(--text-gray); font-weight: normal; }
-        
-        .play-button-custom {
-            width: 55px; height: 55px; 
-            background-color: var(--accent-color);
-            border: none; border-radius: 50%;
-            color: var(--bg-base); font-size: 1.6em; 
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 15px rgba(0, 188, 212, 0.5); 
-        }
-
-        .app-container {
-            width: 400px; max-width: 100%; margin: 0 auto;
-            padding-top: var(--header-height); 
-            padding-bottom: var(--footer-height);
-            min-height: 100vh;
-        }
-        .main-content { padding: 15px; }
-        
-        .channel-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 15px; 
-        }
-        .channel-button {
-            display: flex; flex-direction: column; align-items: center; 
-            padding: 12px 5px; background-color: #2a2a2a; color: var(--text-light);
-            border: 1px solid #333; border-radius: 8px; 
-            cursor: pointer; font-size: 0.75em; text-align: center;
-        }
-        .channel-button.active { 
-            background-color: #383838; border-color: var(--accent-color); 
-            box-shadow: 0 0 8px rgba(0, 188, 212, 0.5); 
-        } 
-        .station-logo { 
-            width: 70px; height: 70px; border-radius: 4px; 
-            margin-bottom: 5px; object-fit: cover; border: 1px solid var(--text-gray); 
+        .play-btn {
+            width: 50px; height: 50px; background: #fff;
+            color: #000; border: none; border-radius: 50%;
+            font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
 
-    <header class="app-header-container">
-        <canvas id="visualizer" width="300" height="70"></canvas>
+<div id="dynamic-bg"></div>
 
-        <button class="header-button" title="Radio">
-    <i class="fa fa-signal"></i>
-</button>
-        <div class="app-header-center">
-            <h1>Bharath Radio</h1>
-            <div id="station-indicator"></div>
-        </div>
-        <button class="header-button" id="menu-btn" title="Menu"><i class="fas fa-bars"></i></button>
-    </header>
+<header>
+    <h1>Bharath Radio</h1>
+    <span id="clock" style="font-weight: 800; font-size: 1rem;">00:00</span>
+</header>
 
-    <div class="app-container">
-        <main class="main-content">
-            <div class="channel-grid">
-                
-                
-<button class="channel-button" data-stream-url="https://streaming.radiokerala.in/listen/radio_kerala/radio.mp3" data-channel-name="Radio Kerala">
-    <img src="https://radiosindia.com/images/keralaradio1.jpg" class="station-logo">
-    <span class="btn-name">Radio Kerala</span>
-    <span class="btn-freq"></span>
-</button>
-
-                <button class="channel-button" data-stream-url="https://fm.ashrayafm90.com/ashrayafm" data-channel-name="Ashraya FM">
-                    <img src="https://liveradios.in/wp-content/uploads/ashrayafm.jpg" class="station-logo">Ashraya FM
-                </button>
-                
-                <button class="channel-button" data-stream-url="https://a1.asurahosting.com/listen/radio_suno_87.6fm/radio.mp3" data-channel-name="Radio Mango">
-    <img src="https://radiosindia.com/images/radiosunobh.jpg" class="station-logo">Radio Suno
-</button>
-                
-                <button class="channel-button" data-stream-url="https://listen.openstream.co/4635/audio" data-channel-name="Radio Mango">
-                    <img src="https://liveradios.in/wp-content/uploads/radiomango.jpg" class="station-logo">Radio Mango
-                </button>
-
-                <button class="channel-button" data-stream-url="https://strw3.openstream.co/562?aw_0_1st.collectionid%3D6714%26stationId%3D6714%26publisherId%3D586%26k%3D1756808210" data-channel-name="Suryan FM">
-                    <img src="https://liveradios.in/wp-content/uploads/suryanfm.jpg" class="station-logo">Suryan FM
-                </button>
-                
-                <button class="channel-button" data-stream-url="https://usa15.fastcast4u.com/proxy/radiomall/stream" data-channel-name="Gramaphone FM" data-freq="105.5">
-                    <img src="https://onlineradiofm.in/assets/image/radio/180/gramaphone-fm.jpg" class="station-logo">
-                    <span class="btn-name">Gramaphone</span>
-                    
-                </button>
-                
-                <button class="channel-button" data-stream-url="http://ice31.securenetsystems.net/RADIOKERAL" data-channel-name="Radio Keralam">
-                    <img src="https://cdnrf.securenetsystems.net/file_radio/stations_large/RADIOKERAL/v5/album-art-default.png" class="station-logo">Radio Keralam
-                </button>
-                
-               
-
-                <button class="channel-button" data-stream-url="https://air.pc.cdn.bitgravity.com/air/live/pbaudio229/playlist.m3u8" data-channel-name="Ananthapuri FM">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuwneMST8tcETyh30ManutUuzplTkEE6AS68GdVkGLUwCV7Jn4c_DGP0M&s=10" class="station-logo">Ananthapuri FM
-                </button>
-                
-                <button class="channel-button" data-stream-url="https://air.pc.cdn.bitgravity.com/air/live/pbaudio045/playlist.m3u8" data-channel-name="Kochi FM">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR-jold_pBomv7XpJd0DLV_2l0aqHmRBtS1sAnR2cPIUPtDP3IeucN7Xjc&s=10" class="station-logo">Kochi FM
-                </button>
-
-                <button class="channel-button" data-stream-url="https://air.pc.cdn.bitgravity.com/air/live/pbaudio230/playlist.m3u8" data-channel-name="AIR Alappuzha">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTG0UjQNShb6ci4iZ1pyGha_mJilIzUp2l5X1ESsAftVSKtl_KZojdzoUaQ&s=10" class="station-logo">AIR Alappuzha
-                </button>
-                
-                <button class="channel-button" data-stream-url="https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8" data-channel-name="Vividh Bharathi">
-                    <img src="https://liveradios.in/wp-content/uploads/vividhbharathi.jpg" class="station-logo">Vividh Bharathi
-                </button>
-                
-
-
-
-                <button class="channel-button" data-stream-url="https://stream.zeno.fm/dz8dvc19mexuv" data-channel-name="Rhythm Nation">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQP1HKAZK7QGZVKKKXehQTLw6Pc5F5cl-7l2Ytvp5s-4g&s" class="station-logo">
-                    <span class="btn-name">Rhythm Nation</span>
-                </button>
-
-                
-
-                <button class="channel-button" data-stream-url="https://443-1.autopo.st/183/stream" data-channel-name="Media Village">
-                    <img src="https://ui-avatars.com/api/?name=Media+Village&background=random&color=fff&size=128" class="station-logo">
-                    <span class="btn-name">Media Village</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://carol.epichosts.co.uk:8570/live.mp3" data-channel-name="Diverse FM Hindi">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa-m4UNmDT1Mp5MoB237zwwLYLqFB6A-fA5ZrkQnS2zoSlqWyX6sCCqtQ&s=10" class="station-logo">
-                    <span class="btn-name">Diverse Hindi</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://centova.aarenworld.com/proxy/894tamilfm/stream" data-channel-name="Tamil FM Dubai">
-                    <img src="https://onlineradiofm.in/assets/image/radio/180/tamil894.png" class="station-logo">
-                    <span class="btn-name">Tamil FM Dubai</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://cast1.my-control-panel.com/proxy/myradio90fm/stream&#34" data-channel-name="My Radio">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ25eqGvn7MzfBcYAuJ_tlOe63Z08JOjZI9nusGyb7MsuYTQ7H8BbaeyNc&s=10" class="station-logo">
-                    <span class="btn-name">My Radio</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://sathees.radioca.st/;stream.mp3" data-channel-name="Vaanam Radio">
-                    <img src="https://liveradios.in/wp-content/uploads/vaanamfmhd.jpg" class="station-logo">
-                    <span class="btn-name">Vaanam</span>
-                    
-                </button>
-
-               
-                
-                
-
-               <button class="channel-button" data-stream-url="https://s7.yesstreaming.net:8062/stream" data-channel-name="Vanavil FM">
-                    <img src="https://onlineradiofm.in/assets/image/radio/180/vanavilfm.webp" class="station-logo">
-                    <span class="btn-name">Vanavil</span>
-                </button>
-
-                <button class="channel-button" data-stream-url="https://playerservices.streamtheworld.com/api/livestream-redirect/MINNAL_FMAAC.aac" data-channel-name="Minnal FM">
-                    <img src="https://liveradios.in/wp-content/uploads/minnalfm.jpg" class="station-logo">
-                    <span class="btn-name">Minnal FM</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://cdn.jsdelivr.net/gh/shoy77/mp3/Mouname.mp3" data-channel-name="Bharath FM">
-                    <img src="https://cdn.vectorstock.com/i/500p/22/59/a-classic-vintage-microphone-with-retro-design-vector-54222259.jpg" class="station-logo">
-                    <span class="btn-name">Bharath FM</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://s7.yesstreaming.net:8038/stream" data-channel-name="ARR Radio">
-                    <img src="https://onlineradiohub.com/wp-content/uploads/2024/01/AR-Rahman-fm.jpg" class="station-logo">
-                    <span class="btn-name">ARR Radio</span>
-                    
-                </button>
-
-               
-
-               <button class="channel-button" data-stream-url="https://air.pc.cdn.bitgravity.com/air/live/pbaudio083/playlist.m3u8" data-channel-name="AIR Kozhikode" data-freq="103.6">
-                    <img src="https://onlineradiofm.in/assets/image/radio/180/all-india-air.webp" class="station-logo">
-                    <span class="btn-name">Kozhikode</span>
-                    
-                </button>
-
-               
-
-               <button class="channel-button" data-stream-url="https://regiocast.streamabc.net/regc-90s90seurodance7558633-mp3-192-3419489" data-channel-name="90s Euro Dance" data-freq="105.6">
-                    <img src="https://www.radio.net/300/eurodance90.png?version=cfb442ffae6c972f0d1632d9dbf0470ef49da630" class="station-logo">
-                    <span class="btn-name">90s Euro</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://regiocast.streamabc.net/regc-90s90smain4920117-mp3-192-6232809" data-channel-name="90s Club Hits" data-freq="105.7">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRKw-yRqBm77lFfQNOqiRfamg0YlwGlhZ2wVHxyBJsJ5z_x3j3W1OIHA1XW&s=10" class="station-logo">
-                    <span class="btn-name">90s Club</span>
-                    
-                </button>
-
-                <button class="channel-button" data-stream-url="https://icecast.mediaice.co.uk/DiverseMP3" data-channel-name="Diverse FM Eng" data-freq="106.0">
-                    <img src="https://assets.radioplayer.org/826/8261126/600/600/kwdqaoda.png" class="station-logo">
-                    <span class="btn-name">Diverse Eng</span>
-                </button>
-
-
-                <button class="channel-button" data-stream-url=" https://gains.reviveradio.net/proxy/jesusreigns?mp=/stream" data-channel-name="Jesus Radio" data-freq="107.4">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSX3lAREG_hieYNGXYuyM1wVRR33ohaXQajCb_su4Ok3bGRiVyH12K9JI8W&s=10" class="station-logo">
-                    <span class="btn-name">Jesus Radio</span>
-                </button>
-
-                <button class="channel-button" data-stream-url="https://dreamsiteradiocp2.com/proxy/rmindia1?mp=/stream" data-channel-name="Radio Maria" data-freq="107.6">
-                    <img src="https://tamilradios.net/webpimg/kerala/radio_15549_radio-maria.webp" class="station-logo">
-                    <span class="btn-name">Radio Maria</span>
-                
-                </button>
-
-                <button class="channel-button" data-stream-url="https://ice31.securenetsystems.net/DVN" data-channel-name="DVN Radio" data-freq="107.7">
-                    <img src="https://liveradios.in/wp-content/uploads/dvnradio.jpg" class="station-logo">
-                    <span class="btn-name">DVN Radio</span>
-                </button>
-
-                <button class="channel-button" data-stream-url="https://gains.reviveradio.net/proxy/rafaradio?mp=/stream" data-channel-name="RAFA Radio" data-freq="107.8">
-                    <img src="https://play-lh.googleusercontent.com/KiP3jVS7Tao6t6WFp37DitJV7VhisnWyT1Lxd4cUGTVW5pBTW8LOl1zqb5ZDJe1rPPGy" class="station-logo">
-                    <span class="btn-name">RAFA Radio</span>
-                </button>
-
-                
-
-            </div>
-        </main>
+<div class="scroller" id="grid">
     </div>
 
-    <footer class="playback-bar">
-        <div class="now-playing-info">
-            <div>
-                <span id="now-playing-text">Select a Station</span>
-                <span id="playback-status">Ready to play</span>
+<footer class="ios-player">
+    <div class="led-meter" id="ledMeter"></div>
+    
+    <div class="player-main">
+        <div class="mini-info">
+            <img src="https://via.placeholder.com/50" id="cur-img">
+            <div class="text-group">
+                <span id="st-status">SYSTEM READY</span>
+                <span id="st-name">Select Station</span>
             </div>
         </div>
-        <button id="play-pause-btn" class="play-button-custom" title="Play/Pause">
-            <i class="fas fa-play"></i>
-        </button>
-    </footer>
+        <button class="play-btn" id="playBtn" onclick="togglePlay()"><i class="fas fa-play"></i></button>
+    </div>
+</footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const audio = new Audio();
-            audio.crossOrigin = "anonymous";
+<audio id="audio" crossorigin="anonymous"></audio>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script>
+    const audio = document.getElementById('audio');
+    const hls = new Hls();
+    let audioCtx, analyser, dataArray;
+
+    const stations = [
+        { name: "Radio Kerala", url: "https://streaming.radiokerala.in/listen/radio_kerala/radio.mp3", img: "https://radiosindia.com/images/keralaradio1.jpg", color: "#1e3a8a" },
+        { name: "Radio Suno", url: "https://a1.asurahosting.com/listen/radio_suno_87.6fm/radio.mp3", img: "https://radiosindia.com/images/radiosunobh.jpg", color: "#6b21a8" },
+        { name: "Radio Mango", url: "https://listen.openstream.co/4635/audio", img: "https://liveradios.in/wp-content/uploads/radiomango.jpg", color: "#991b1b" },
+        { name: "Suryan FM", url: "https://strw3.openstream.co/562", img: "https://liveradios.in/wp-content/uploads/suryanfm.jpg", color: "#166534" },
+        { name: "Ananthapuri", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio229/playlist.m3u8", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuwneMST8tcETyh30ManutUuzplTkEE6AS68GdVkGLUwCV7Jn4c_DGP0M&s=10", color: "#9a3412" },
+        { name: "Vividh Bharathi", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8", img: "https://liveradios.in/wp-content/uploads/vividhbharathi.jpg", color: "#881337" },
+        { name: "Keralam", url: "http://ice31.securenetsystems.net/RADIOKERAL", img: "https://cdnrf.securenetsystems.net/file_radio/stations_large/RADIOKERAL/v5/album-art-default.png", color: "#3f3f46" },
+        { name: "Kozhikode", url: "https://air.pc.cdn.bitgravity.com/air/live/pbaudio083/playlist.m3u8", img: "https://onlineradiofm.in/assets/image/radio/180/all-india-air.webp", color: "#713f12" },
+        { name: "ARR Radio", url: "https://s7.yesstreaming.net:8038/stream", img: "https://onlineradiohub.com/wp-content/uploads/2024/01/AR-Rahman-fm.jpg", color: "#064e3b" }
+    ];
+
+    // --- Create 20 LED Segments ---
+    const ledMeter = document.getElementById('ledMeter');
+    const segCount = 20;
+    for(let i=0; i < segCount; i++) {
+        let seg = document.createElement('div');
+        seg.className = 'led-seg';
+        ledMeter.appendChild(seg);
+    }
+
+    function initAudio() {
+        if(audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+        analyser.fftSize = 64;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        renderLED();
+    }
+
+    function renderLED() {
+        requestAnimationFrame(renderLED);
+        if(!audio.paused) {
+            analyser.getByteFrequencyData(dataArray);
+            let avg = dataArray.reduce((a,b) => a+b) / dataArray.length;
+            let level = Math.floor((avg / 160) * segCount);
             
-            const playBtn = document.getElementById('play-pause-btn');
-            const playIcon = playBtn.querySelector('i');
-            const stationNameEl = document.getElementById('now-playing-text');
-            const statusTextEl = document.getElementById('playback-status');
-            const indicator = document.getElementById('station-indicator');
-            const channelButtons = document.querySelectorAll('.channel-button');
-            
-            let isPlaying = false;
-            let hls = null;
-            let audioContext, analyser, source, canvas, ctx;
-            let visualizerInitialized = false;
-
-            // --- NEW: SYMMETRICAL / MIRRORED VISUALIZER ---
-            function initVisualizer() {
-                if (visualizerInitialized) return;
-                
-                try {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    analyser = audioContext.createAnalyser();
-                    source = audioContext.createMediaElementSource(audio);
-                    source.connect(analyser);
-                    analyser.connect(audioContext.destination);
+            const segs = document.querySelectorAll('.led-seg');
+            segs.forEach((seg, i) => {
+                if(i < level) {
+                    // Logic for 4-color distribution
+                    if(i < 5) seg.style.background = 'var(--led-blue)';
+                    else if(i < 11) seg.style.background = 'var(--led-green)';
+                    else if(i < 16) seg.style.background = 'var(--led-yellow)';
+                    else seg.style.background = 'var(--led-red)';
                     
-                    // 128 is good for thick, distinct bars
-                    analyser.fftSize = 128; 
-                    const bufferLength = analyser.frequencyBinCount;
-                    const dataArray = new Uint8Array(bufferLength);
-                    
-                    canvas = document.getElementById('visualizer');
-                    ctx = canvas.getContext('2d');
-                    
-                    function animate() {
-                        requestAnimationFrame(animate);
-                        analyser.getByteFrequencyData(dataArray);
-                        
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        
-                        // Calculate center point
-                        const centerX = canvas.width / 2;
-                        // Bar width depends on how many bars we fit in HALF the screen
-                        const barWidth = (centerX / bufferLength) * 2.5; 
-                        let barHeight;
-                        let x = 0;
-                        
-                        for(let i = 0; i < bufferLength; i++) {
-                            // Scale height
-                            barHeight = (dataArray[i] / 255) * canvas.height;
-                            
-                            // Color Gradient: Bright Center -> Dark Edges
-                            // We create a gradient for the fill style
-                            const hue = 180 + (i * 2); // 180 is Cyan, shift towards blue
-                            ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-
-                            // Draw RIGHT side bar (moving away from center)
-                            ctx.fillRect(centerX + x, canvas.height - barHeight, barWidth, barHeight);
-                            
-                            // Draw LEFT side bar (moving away from center)
-                            // We subtract width to draw it backwards from center
-                            ctx.fillRect(centerX - (x + barWidth), canvas.height - barHeight, barWidth, barHeight);
-                            
-                            // Add spacing
-                            x += barWidth + 1;
-                        }
-                    }
-                    animate();
-                    visualizerInitialized = true;
-                } catch (e) {
-                    console.log("Visualizer blocked.");
-                }
-            }
-
-            // --- Audio Logic ---
-            function playStream(url, name) {
-                if (!visualizerInitialized) initVisualizer();
-                if (audioContext && audioContext.state === 'suspended') audioContext.resume();
-
-                stationNameEl.innerText = name;
-                statusTextEl.innerText = "Buffering...";
-                updateIndicator('loading');
-
-                if (Hls.isSupported() && url.includes('.m3u8')) {
-                    if (hls) hls.destroy();
-                    hls = new Hls();
-                    hls.loadSource(url);
-                    hls.attachMedia(audio);
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                        audio.play().catch(e => console.error(e));
-                    });
+                    seg.style.boxShadow = `0 0 8px ${seg.style.background}`;
                 } else {
-                    if (hls) { hls.destroy(); hls = null; }
-                    audio.src = url;
-                    audio.load();
-                    audio.play().catch(e => console.error(e));
-                }
-            }
-
-            function updatePlayButton(playing) {
-                if (playing) {
-                    playIcon.classList.remove('fa-play');
-                    playIcon.classList.add('fa-pause');
-                    updateIndicator('playing');
-                } else {
-                    playIcon.classList.remove('fa-pause');
-                    playIcon.classList.add('fa-play');
-                    updateIndicator('stopped');
-                }
-            }
-
-            function updateIndicator(state) {
-                indicator.className = '';
-                if (state === 'playing') {
-                    indicator.style.backgroundColor = 'var(--indicator-green)';
-                    indicator.classList.add('playing-pulse');
-                    statusTextEl.innerText = "Live";
-                } else if (state === 'loading') {
-                    indicator.style.backgroundColor = 'var(--indicator-yellow)';
-                } else {
-                    indicator.style.backgroundColor = 'var(--indicator-red)';
-                    statusTextEl.innerText = "Stopped";
-                }
-            }
-
-            channelButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    channelButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    playStream(btn.getAttribute('data-stream-url'), btn.getAttribute('data-channel-name'));
-                });
-            });
-
-            playBtn.addEventListener('click', () => {
-                if (audio.paused) {
-                    if (audio.src || hls) audio.play();
-                    else channelButtons[0].click();
-                } else {
-                    audio.pause();
+                    seg.style.background = '#222';
+                    seg.style.boxShadow = 'none';
                 }
             });
+        }
+    }
 
-            audio.addEventListener('playing', () => updatePlayButton(true));
-            audio.addEventListener('pause', () => updatePlayButton(false));
-            audio.addEventListener('waiting', () => { statusTextEl.innerText = "Buffering..."; updateIndicator('loading'); });
-            audio.addEventListener('error', () => { statusTextEl.innerText = "Offline"; updateIndicator('error'); });
-        });
-    </script>
+    const grid = document.getElementById('grid');
+    stations.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'station-card';
+        div.innerHTML = `<img src="${s.img}"><span>${s.name}</span>`;
+        div.onclick = () => {
+            initAudio();
+            document.querySelectorAll('.station-card').forEach(c => c.classList.remove('active'));
+            div.classList.add('active');
+            document.getElementById('cur-img').src = s.img;
+            document.getElementById('st-name').innerText = s.name;
+            document.getElementById('dynamic-bg').style.background = `radial-gradient(circle at 50% , ${s.color} 0%, #000 100%)`;
+            playStation(s.url, s.name);
+        };
+        grid.appendChild(div);
+    });
+
+    function playStation(url, name) {
+        document.getElementById('st-status').innerText = "CONNECTING";
+        if (url.includes('.m3u8')) { hls.loadSource(url); hls.attachMedia(audio); }
+        else { hls.detachMedia(); audio.src = url; }
+        audio.play();
+    }
+
+    function togglePlay() { audio.paused ? audio.play() : audio.pause(); }
+
+    audio.onplay = () => {
+        document.getElementById('playBtn').innerHTML = '<i class="fas fa-pause"></i>';
+        document.getElementById('st-status').innerText = "LIVE ";
+    };
+    audio.onpause = () => {
+        document.getElementById('playBtn').innerHTML = '<i class="fas fa-play"></i>';
+        document.getElementById('st-status').innerText = "PAUSED";
+    };
+
+    setInterval(() => {
+    const d = new Date();
+    let hours = d.getHours();
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    
+    // Convert to 12-hour format
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    
+    document.getElementById('clock').innerText = `${hours}:${minutes} ${ampm}`;
+}, 1000);
+
+</script>
 </body>
 </html>
